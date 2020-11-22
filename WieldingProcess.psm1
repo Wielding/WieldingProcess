@@ -1,5 +1,7 @@
 Import-Module WieldingAnsi
 
+[console]::TreatControlCAsInput = $true
+
 class ProcessInfo {
     $Id
     $ParentId
@@ -72,43 +74,90 @@ function Show-ProcessExt {
         [float]$MinCpu = 0.01,
         [SortProperty]$SortProperty = [SortProperty]::None,
         [SortDirection]$SortDirection = [SortDirection]::Ascending,
-        [switch]$HideHeader
+        [switch]$HideHeader,
+        [switch]$Continuous
     )
 
-    $ps = Get-ProcessExt -Name $Name
+    if ($Continuous) {
+        Add-Member -InputObject $Wansi -MemberType NoteProperty -Name "EraseDisplay" -Value "`e[2J" -Force
+        Add-Member -InputObject $Wansi -MemberType NoteProperty -Name "MoveHome" -Value "`e[0;0H" -Force
+        Add-Member -InputObject $Wansi -MemberType NoteProperty -Name "EraseLine" -Value "`e[K" -Force
+        Add-Member -InputObject $Wansi -MemberType NoteProperty -Name "HideCursor" -Value "`e[?25l" -Force
+        Add-Member -InputObject $Wansi -MemberType NoteProperty -Name "ShowCursor" -Value "`e[?25h" -Force
+        Add-Member -InputObject $Wansi -MemberType NoteProperty -Name "EnableAlt" -Value "`e[?1049h" -Force
+        Add-Member -InputObject $Wansi -MemberType NoteProperty -Name "DisableAlt" -Value "`e[?1049l" -Force
+    }
+
+    if ($Continuous) {
+        Write-Wansi "{:EnableAlt:}{:EraseDisplay:}{:HideCursor:}"
+    }
+
+    $keepShowing = $true
+    while ($keepShowing) {
+        if ($Continuous) {
+            Write-Wansi "{:MoveHome:}"
+        }
+
+        $keepShowing = $Continuous -and $keepShowing
+        $ps = Get-ProcessExt -Name $Name
     
-    if ($SortProperty -ne [SortProperty]::None) {
-        if ($SortDirection -eq [SortDirection]::Descending) {
-            $ps = $ps | Sort-Object -Property "$SortProperty" -Descending
+        if ($SortProperty -ne [SortProperty]::None) {
+            if ($SortDirection -eq [SortDirection]::Descending) {
+                $ps = $ps | Sort-Object -Property "$SortProperty" -Descending
+            }
+            else {
+                $ps = $ps | Sort-Object -Property "$SortProperty"
+            }
         }
-        else {
-            $ps = $ps | Sort-Object -Property "$Sort"
+
+        $lastLineCount = 0
+        $linesDisplayed = 0
+
+        if (-not $HideHeader) {
+            $linesDisplayed++
+            Write-Wansi ("{0}{1}{2}{3}`n" -f
+                (ConvertTo-AnsiString "{:F15:}{:UnderlineOn:}Id{:R:}" -PadRight 10).Value,
+                (ConvertTo-AnsiString "{:F15:}{:UnderlineOn:}CPU{:R:}" -PadRight 8).Value,
+                (ConvertTo-AnsiString "{:F15:}{:UnderlineOn:}Name{:R:}" -PadRight 30).Value,
+                (ConvertTo-AnsiString "{:F15:}{:UnderlineOn:}Description{:R:}" -PadRight 40).Value
+            )        
         }
-    }
 
-    if (-not $HideHeader) {
-        Write-Wansi ("{0}{1}{2}{3}`n" -f
-            (ConvertTo-AnsiString "{:F15:}{:UnderlineOn:}Id{:R:}" -PadRight 10).Value,
-            (ConvertTo-AnsiString "{:F15:}{:UnderlineOn:}CPU{:R:}" -PadRight 8).Value,
-            (ConvertTo-AnsiString "{:F15:}{:UnderlineOn:}Name{:R:}" -PadRight 30).Value,
-            (ConvertTo-AnsiString "{:F15:}{:UnderlineOn:}Description{:R:}" -PadRight 40).Value
-        )        
-    }
+        $maxProcesses = $Host.UI.RawUI.WindowSize.Height - 5
 
-    foreach ($p in $ps) {
-        if ($p.Id -ne 0) {
-            if ($p.CPU -ge $MinCpu) {
-                if ($null -eq $p.ParentId) {
-                    Write-Wansi ("{0}{1}{2}{3}`n" -f
-                        (ConvertTo-AnsiString "{:F15:}$($p.Id){:R:}" -PadRight 10).Value,
-                        (ConvertTo-AnsiString "{:F10:}$($p.CPU){:R:}" -PadRight 8).Value,
-                        (ConvertTo-AnsiString "{:F3:}$($p.Name){:R:}" -PadRight 30).Value,
-                        (ConvertTo-AnsiString "{:F8:}$($p.Description){:R:}" -PadRight 40).Value.SubString(0, 40)
-                    )
+        foreach ($p in $ps) {
+            if ($p.Id -ne 0) {
+                if ($p.CPU -ge $MinCpu) {
+                    if ($null -eq $p.ParentId) {
+                        if ($linesDisplayed -ge $maxProcesses) {
+                            break
+                        }
+                        $linesDisplayed++                        
+                        Write-Wansi ("{0}{1}{2}{3}`n" -f
+                            (ConvertTo-AnsiString "{:F15:}$($p.Id){:R:}" -PadRight 10).Value,
+                            (ConvertTo-AnsiString "{:F10:}$($p.CPU){:R:}" -PadRight 8).Value,
+                            (ConvertTo-AnsiString "{:F3:}$($p.Name){:R:}" -PadRight 30).Value,
+                            (ConvertTo-AnsiString "{:F8:}$($p.Description){:R:}{:EraseLine:}" -PadRight 40).Value.SubString(0, 40 + $Wansi.EraseLine.Length)
+                        )
+                    }
                 }
             }
         }
-        
+
+        if ($Continuous) {
+            $linesToClear = $linesDisplayed - $lastLineCount
+            $lastLineCount = $linesDisplayed
+
+            while ($linesToClear -gt 0) {
+                Write-Wansi "{:EraseLine:}"
+                $linesToClear --
+            }
+        }
+
+        if($Host.UI.RawUI.KeyAvailable -and (3 -eq  [int]$Host.UI.RawUI.ReadKey("AllowCtrlC,IncludeKeyUp,NoEcho").Character)) {
+            Write-Wansi "{:DisableAlt:}{:ShowCursor:}"
+            return
+        }
     }
 }
 
