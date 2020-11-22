@@ -115,7 +115,7 @@ function Show-ProcessExt {
             $linesDisplayed++
             Write-Wansi ("{0}{1} {2}{3}{4}`n" -f
                 (ConvertTo-AnsiString "{:F15:}{:B6:}Id" -PadRight 10).Value,
-                (ConvertTo-AnsiString "CPU" -PadLeft 8).Value,
+                (ConvertTo-AnsiString "CPU%" -PadLeft 8).Value,
                 (ConvertTo-AnsiString "Name" -PadRight 30).Value,
                 (ConvertTo-AnsiString "Description{:EraseLine:}" -PadRight 40).Value,
                 (ConvertTo-AnsiString "{:R:}").Value
@@ -156,12 +156,11 @@ function Show-ProcessExt {
 
             $moveToLastLine = "`e[$($host.Ui.RawUI.WindowSize.Height);0H"
             Write-Wansi "$moveToLastLine{:F15:}{:B6:}'Q' or 'Ctrl-C' to quit{:EraseLine:}{:R:}"
-
         }
 
         if ($Host.UI.RawUI.KeyAvailable) { 
-            $keyHit = [int]$Host.UI.RawUI.ReadKey("AllowCtrlC,IncludeKeyUp,NoEcho").Character
-            if ($quitKeys.Contains($keyHit)) {
+            $keyHit = $Host.UI.RawUI.ReadKey("AllowCtrlC,IncludeKeyUp,NoEcho")
+            if ($quitKeys.Contains($keyHit.VirtualKeyCode)) {
                 Write-Wansi "{:DisableAlt:}{:ShowCursor:}"
                 return
             }
