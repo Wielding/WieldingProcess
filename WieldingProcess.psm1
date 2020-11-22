@@ -115,24 +115,28 @@ function Show-ProcessExt {
 
         if (-not $HideHeader) {
             $linesDisplayed++
-            Write-Wansi ("{0}{1}{2}{3}`n" -f
-                (ConvertTo-AnsiString "{:F15:}{:UnderlineOn:}Id{:R:}" -PadRight 10).Value,
-                (ConvertTo-AnsiString "{:F15:}{:UnderlineOn:}CPU{:R:}" -PadRight 8).Value,
-                (ConvertTo-AnsiString "{:F15:}{:UnderlineOn:}Name{:R:}" -PadRight 30).Value,
-                (ConvertTo-AnsiString "{:F15:}{:UnderlineOn:}Description{:R:}" -PadRight 40).Value
+            Write-Wansi ("{0}{1}{2}{3}{4}`n" -f
+                (ConvertTo-AnsiString "{:F15:}{:B6:}Id" -PadRight 10).Value,
+                (ConvertTo-AnsiString "CPU" -PadRight 8).Value,
+                (ConvertTo-AnsiString "Name" -PadRight 30).Value,
+                (ConvertTo-AnsiString "Description{:EraseLine:}" -PadRight 40).Value,
+                (ConvertTo-AnsiString "{:R:}").Value
+
             )        
         }
 
-        $maxProcesses = $Host.UI.RawUI.WindowSize.Height - 5
+        $maxProcesses = $Host.UI.RawUI.WindowSize.Height - 1
 
         foreach ($p in $ps) {
             if ($p.Id -ne 0) {
                 if ($p.CPU -ge $MinCpu) {
                     if ($null -eq $p.ParentId) {
+                        $linesDisplayed++                        
+
                         if ($linesDisplayed -ge $maxProcesses) {
                             break
                         }
-                        $linesDisplayed++                        
+
                         Write-Wansi ("{0}{1}{2}{3}`n" -f
                             (ConvertTo-AnsiString "{:F15:}$($p.Id){:R:}" -PadRight 10).Value,
                             (ConvertTo-AnsiString "{:F10:}$($p.CPU){:R:}" -PadRight 8).Value,
@@ -154,7 +158,7 @@ function Show-ProcessExt {
             }
         }
 
-        if($Host.UI.RawUI.KeyAvailable -and (3 -eq  [int]$Host.UI.RawUI.ReadKey("AllowCtrlC,IncludeKeyUp,NoEcho").Character)) {
+        if ($Host.UI.RawUI.KeyAvailable -and (3 -eq [int]$Host.UI.RawUI.ReadKey("AllowCtrlC,IncludeKeyUp,NoEcho").Character)) {
             Write-Wansi "{:DisableAlt:}{:ShowCursor:}"
             return
         }
