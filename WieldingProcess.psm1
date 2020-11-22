@@ -111,9 +111,9 @@ function Show-ProcessExt {
 
         if (-not $HideHeader) {
             $linesDisplayed++
-            Write-Wansi ("{0}{1}{2}{3}{4}`n" -f
+            Write-Wansi ("{0}{1} {2}{3}{4}`n" -f
                 (ConvertTo-AnsiString "{:F15:}{:B6:}Id" -PadRight 10).Value,
-                (ConvertTo-AnsiString "CPU" -PadRight 8).Value,
+                (ConvertTo-AnsiString "CPU" -PadLeft 8).Value,
                 (ConvertTo-AnsiString "Name" -PadRight 30).Value,
                 (ConvertTo-AnsiString "Description{:EraseLine:}" -PadRight 40).Value,
                 (ConvertTo-AnsiString "{:R:}").Value
@@ -133,9 +133,9 @@ function Show-ProcessExt {
                             break
                         }
 
-                        Write-Wansi ("{0}{1}{2}{3}`n" -f
+                        Write-Wansi ("{0}{1} {2}{3}`n" -f
                             (ConvertTo-AnsiString "{:F15:}$($p.Id){:R:}" -PadRight 10).Value,
-                            (ConvertTo-AnsiString "{:F10:}$($p.CPU){:R:}" -PadRight 8).Value,
+                            (ConvertTo-AnsiString "{:F10:}$($p.CPU){:R:}" -PadLeft 8).Value,
                             (ConvertTo-AnsiString "{:F3:}$($p.Name){:R:}" -PadRight 30).Value,
                             (ConvertTo-AnsiString "{:F8:}$($p.Description){:R:}{:EraseLine:}" -PadRight 40).Value.SubString(0, 40 + $Wansi.EraseLine.Length)
                         )
@@ -153,7 +153,7 @@ function Show-ProcessExt {
             }            
 
             $moveToLastLine = "`e[$($host.Ui.RawUI.WindowSize.Height);0H"
-            Write-Wansi "$moveToLastLine{:F15:}{:B6:}'Q' or 'Ctrl-C' to quit{:EraseLine:}{:R:}"
+            Write-Wansi "$moveToLastLine{:F15:}{:B6:}'Ctrl-C' to quit{:EraseLine:}{:R:}"
 
         }
 
