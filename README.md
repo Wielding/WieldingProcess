@@ -24,11 +24,6 @@ Show-ProcessExt -Continuous -SortProperty CPU -MinCpu 0.01 -SortDirection Descen
 
 This will display an `htop` like continuously updating screen with as many processes as can fit within your current console height and have at least 0.01% CPU usage.
 
-You can stop it at any time with `Ctrl-C` which will return you to your previous console screen state.
+You can stop it at any time by hitting `Q` or `Ctrl-C` which will return you to your previous console screen state.
 
-This project is currently my playground for what is possible using [WieldingAnsi](https://github.com/Wielding/WieldingAnsi).
-
-Some of the ANSI escape sequences will be migrated to the [WieldingAnsi](https://github.com/Wielding/WieldingAnsi) project when I have decided they work as expected.
-
-
-
+This project is currently my playground for what is possible using [WieldingAnsi](https://github.com/Wielding/WieldingAnsi) and helps determine what functionality I will add to that project.
