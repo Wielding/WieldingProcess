@@ -16,8 +16,9 @@ To give it a try
 ```powershell
 git clone https://github.com/Wielding/WieldingProcess
 cd WieldingProcess
-Install-Module .\WieldingProcess.psm1
-Import-Module WieldingProcess
+Install-Module WieldingAnsi # this is a required dependency
+Import-Module WieldingAnsi
+Import-Module ./WieldingProcess.psm1
 Show-ProcessExt -Continuous -SortProperty CPU -MinCpu 0.01 -SortDirection Descending
 ```
 
