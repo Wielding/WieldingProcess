@@ -75,6 +75,8 @@ function Show-ProcessExt {
         [switch]$Continuous
     )
 
+    $quitKeys = @([int][char]'Q', [int][char]'q', 3)
+
     if ($Continuous) {
         Add-Member -InputObject $Wansi -MemberType NoteProperty -Name "EraseDisplay" -Value "`e[2J" -Force
         Add-Member -InputObject $Wansi -MemberType NoteProperty -Name "MoveHome" -Value "`e[0;0H" -Force
@@ -153,13 +155,16 @@ function Show-ProcessExt {
             }            
 
             $moveToLastLine = "`e[$($host.Ui.RawUI.WindowSize.Height);0H"
-            Write-Wansi "$moveToLastLine{:F15:}{:B6:}'Ctrl-C' to quit{:EraseLine:}{:R:}"
+            Write-Wansi "$moveToLastLine{:F15:}{:B6:}'Q' or 'Ctrl-C' to quit{:EraseLine:}{:R:}"
 
         }
 
-        if ($Host.UI.RawUI.KeyAvailable -and (3 -eq [int]$Host.UI.RawUI.ReadKey("AllowCtrlC,IncludeKeyUp,NoEcho").Character)) {
-            Write-Wansi "{:DisableAlt:}{:ShowCursor:}"
-            return
+        if ($Host.UI.RawUI.KeyAvailable) { 
+            $keyHit = [int]$Host.UI.RawUI.ReadKey("AllowCtrlC,IncludeKeyUp,NoEcho").Character
+            if ($quitKeys.Contains($keyHit)) {
+                Write-Wansi "{:DisableAlt:}{:ShowCursor:}"
+                return
+            }
         }
     }
 }
