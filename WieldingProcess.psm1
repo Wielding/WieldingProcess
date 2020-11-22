@@ -24,8 +24,6 @@ function Get-ProcessExt {
     $pi = @()
     $cpu = @{}
 
-    $wmi = Get-CimInstance -Class Win32_Process
-
     (Get-Counter "\Process($Name)\% Processor Time" -ErrorAction SilentlyContinue).CounterSamples  | ForEach-Object -Process {
         $cpu[$_.InstanceName] = [Decimal]::Round(($_.CookedValue / $CpuCores), 2)
     }
@@ -35,8 +33,7 @@ function Get-ProcessExt {
     foreach ($p in $gp) {
         $add = $true
 
-        if (-not $cpu.ContainsKey($p.Name))
-        {
+        if (-not $cpu.ContainsKey($p.Name)) {
             $cpu[$p.Name] = -1
         }
 
@@ -58,12 +55,59 @@ function Get-ProcessExt {
     $pi
 }    
 
+enum SortProperty {
+    None
+    CPU
+    Name
+}
+
+enum SortDirection {
+    Ascending
+    Descending
+}
+
 function Show-ProcessExt {
     param (
-        [string]$Name
+        [string]$Name = "*",
+        [float]$MinCpu = 0.01,
+        [SortProperty]$SortProperty = [SortProperty]::None,
+        [SortDirection]$SortDirection = [SortDirection]::Ascending,
+        [switch]$HideHeader
     )
 
-    Get-ProcessExt -Name $Name
+    $ps = Get-ProcessExt -Name $Name
+    
+    if ($SortProperty -ne [SortProperty]::None) {
+        if ($SortDirection -eq [SortDirection]::Descending) {
+            $ps = $ps | Sort-Object -Property "$SortProperty" -Descending
+        }
+        else {
+            $ps = $ps | Sort-Object -Property "$Sort"
+        }
+    }
+
+    if (-not $HideHeader) {
+        Write-Wansi ("{0}{1}{2}`n" -f
+            (ConvertTo-AnsiString "{:F15:}{:UnderlineOn:}Id{:R:}" -PadRight 10).Value,
+            (ConvertTo-AnsiString "{:F15:}{:UnderlineOn:}CPU{:R:}" -PadRight 8).Value,
+            (ConvertTo-AnsiString "{:F15:}{:UnderlineOn:}Name{:R:}" -PadRight 30).Value
+        )        
+    }
+
+    foreach ($p in $ps) {
+        if ($p.Id -ne 0) {
+            if ($p.CPU -ge $MinCpu) {
+                if ($null -eq $p.ParentId) {
+                    Write-Wansi ("{0}{1}{2}`n" -f
+                        (ConvertTo-AnsiString "{:F15:}$($p.Id){:R:}" -PadRight 10).Value,
+                        (ConvertTo-AnsiString "{:F10:}$($p.CPU){:R:}" -PadRight 8).Value,
+                        (ConvertTo-AnsiString "{:F3:}$($p.Name){:R:}" -PadRight 30).Value
+                    )
+                }
+            }
+        }
+        
+    }
 }
 
 
@@ -78,4 +122,3 @@ Register-ArgumentCompleter -CommandName Show-ProcessExt -ParameterName Name -Scr
 
 Export-ModuleMember -Function Out-Default, 'Get-ProcessExt'
 Export-ModuleMember -Function Out-Default, 'Show-ProcessExt'
-# Export-ModuleMember -Variable 'GdcTheme'
