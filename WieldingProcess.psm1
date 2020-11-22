@@ -11,10 +11,7 @@ class ProcessInfo {
     [Int64]$PM
     [Int64]$WS 
     [Int64]$Threads
-
 }
-
-
 
 function Get-ProcessExt {
     param (
@@ -110,7 +107,6 @@ function Show-ProcessExt {
             }
         }
 
-        $lastLineCount = 0
         $linesDisplayed = 0
 
         if (-not $HideHeader) {
@@ -149,13 +145,16 @@ function Show-ProcessExt {
         }
 
         if ($Continuous) {
-            $linesToClear = $linesDisplayed - $lastLineCount
-            $lastLineCount = $linesDisplayed
+            $linesToClear = $host.Ui.RawUI.WindowSize.Height - $linesDisplayed - 2
 
             while ($linesToClear -gt 0) {
-                Write-Wansi "{:EraseLine:}"
-                $linesToClear --
-            }
+                Write-Wansi "{:EraseLine:}`n"                    
+                $linesToClear--
+            }            
+
+            $moveToLastLine = "`e[$($host.Ui.RawUI.WindowSize.Height);0H"
+            Write-Wansi "$moveToLastLine{:F15:}{:B6:}'Q' or 'Ctrl-C' to quit{:EraseLine:}{:R:}"
+
         }
 
         if ($Host.UI.RawUI.KeyAvailable -and (3 -eq [int]$Host.UI.RawUI.ReadKey("AllowCtrlC,IncludeKeyUp,NoEcho").Character)) {
