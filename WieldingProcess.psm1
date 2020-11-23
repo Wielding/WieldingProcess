@@ -217,7 +217,7 @@ function Show-ProcessExt {
         $maxProcesses = $ps.Length
 
         if ($Continuous) {
-            $maxProcesses = $Host.UI.RawUI.WindowSize.Height - 1
+            $maxProcesses = $Host.UI.RawUI.WindowSize.Height
         }
 
         foreach ($p in $ps) {
