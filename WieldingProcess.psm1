@@ -205,7 +205,7 @@ function Show-ProcessExt {
             $linesDisplayed++
             Write-Wansi ("{0}{1}{2} {3}{4}{5}`n" -f
                 (ConvertTo-AnsiString "{:F15:}{:B6:}Id" -PadRight 10).Value,
-                (ConvertTo-AnsiString "Parent" -PadRight 10).Value,
+                (ConvertTo-AnsiString "ParentId" -PadLeft 10).Value,
                 (ConvertTo-AnsiString "CPU%" -PadLeft 8).Value,
                 (ConvertTo-AnsiString "Name" -PadRight 30).Value,
                 (ConvertTo-AnsiString "Description{:EraseLine:}" -PadRight 40).Value,
@@ -232,7 +232,7 @@ function Show-ProcessExt {
 
                         Write-Wansi ("{0}{1}{2} {3}{4}`n" -f
                             (ConvertTo-AnsiString "{:F15:}$($p.Id){:R:}" -PadRight 10).Value,
-                            (ConvertTo-AnsiString "{:F15:}$($p.ParentId){:R:}" -PadLeft 8).Value,
+                            (ConvertTo-AnsiString "{:F15:}$($p.ParentId){:R:}" -PadLeft 10).Value,
                             (ConvertTo-AnsiString "{:F10:}$($p.CPU){:R:}" -PadLeft 8).Value,
                             (ConvertTo-AnsiString "{:F3:}$($p.Name){:R:}" -PadRight 30).Value,
                             (ConvertTo-AnsiString "{:F8:}$($p.Description){:R:}{:EraseLine:}" -PadRight 40).Value.SubString(0, 40)
