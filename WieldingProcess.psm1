@@ -80,16 +80,13 @@ function Get-KeyCommand {
        [System.ConsoleKeyInfo]$key
    ) 
 
-   $matchedModifier = $KeyMappings.ContainsKey($key.Modifiers)
-
-   if ($matchedModifier) {
+   if ($KeyMappings.ContainsKey($key.Modifiers)) {
        return $KeyMappings[$key.Modifiers][$key.Key]
    }
 
    return $KeyMappings["None"][$key.Key]
-
-
 }
+
 function Show-ProcessExt {
     param (
         [string]$Name = "*",
