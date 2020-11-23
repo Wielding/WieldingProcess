@@ -76,7 +76,7 @@ function Get-ProcessExt {
 
 function Get-ProcessExtWmi {
     param (
-        [string]$Name = "*"
+        [string]$Name = ""
     )
 
     $CpuCores = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
@@ -96,8 +96,10 @@ function Get-ProcessExtWmi {
 
     foreach ($p in $gp) {
 
-        if (-not ($p.Caption -match $Name)) {
-            continue
+        if ($Name -ne "") {
+            if (-not ($p.Caption -match "^$Name$")) {
+                continue
+            }
         }
         
         $add = $true
@@ -138,8 +140,8 @@ function Get-KeyCommand {
 
 function Show-ProcessExt {
     param (
-        [string]$Name = "*",
-        [float]$MinCpu = 0.01,
+        [string]$Name = "",
+        [float]$MinCpu = 0.0,
         [SortProperty]$SortProperty = [SortProperty]::None,
         [SortDirection]$SortDirection = [SortDirection]::Ascending,
         [switch]$HideHeader,
@@ -165,15 +167,15 @@ function Show-ProcessExt {
         }
     }
 
-    if ($Continuous) {
-        Add-Member -InputObject $Wansi -MemberType NoteProperty -Name "EraseDisplay" -Value "`e[2J" -Force
-        Add-Member -InputObject $Wansi -MemberType NoteProperty -Name "MoveHome" -Value "`e[0;0H" -Force
-        Add-Member -InputObject $Wansi -MemberType NoteProperty -Name "EraseLine" -Value "`e[K" -Force
-        Add-Member -InputObject $Wansi -MemberType NoteProperty -Name "HideCursor" -Value "`e[?25l" -Force
-        Add-Member -InputObject $Wansi -MemberType NoteProperty -Name "ShowCursor" -Value "`e[?25h" -Force
-        Add-Member -InputObject $Wansi -MemberType NoteProperty -Name "EnableAlt" -Value "`e[?1049h" -Force
-        Add-Member -InputObject $Wansi -MemberType NoteProperty -Name "DisableAlt" -Value "`e[?1049l" -Force
-    }
+
+    Add-Member -InputObject $Wansi -MemberType NoteProperty -Name "EraseDisplay" -Value "`e[2J" -Force
+    Add-Member -InputObject $Wansi -MemberType NoteProperty -Name "MoveHome" -Value "`e[0;0H" -Force
+    Add-Member -InputObject $Wansi -MemberType NoteProperty -Name "EraseLine" -Value "`e[K" -Force
+    Add-Member -InputObject $Wansi -MemberType NoteProperty -Name "HideCursor" -Value "`e[?25l" -Force
+    Add-Member -InputObject $Wansi -MemberType NoteProperty -Name "ShowCursor" -Value "`e[?25h" -Force
+    Add-Member -InputObject $Wansi -MemberType NoteProperty -Name "EnableAlt" -Value "`e[?1049h" -Force
+    Add-Member -InputObject $Wansi -MemberType NoteProperty -Name "DisableAlt" -Value "`e[?1049l" -Force
+
 
     if ($Continuous) {
         Write-Wansi "{:EnableAlt:}{:EraseDisplay:}{:HideCursor:}"
@@ -211,11 +213,15 @@ function Show-ProcessExt {
             )        
         }
 
-        $maxProcesses = $Host.UI.RawUI.WindowSize.Height - 1
+        $maxProcesses = $ps.Length
+
+        if ($Continuous) {
+            $maxProcesses = $Host.UI.RawUI.WindowSize.Height - 1
+        }
 
         foreach ($p in $ps) {
             if ($p.Id -ne 0) {
-                if ($p.CPU -ge $MinCpu) {
+                if (($p.CPU -ge $MinCpu) -or ($null -eq $p.CPU)) {
                     if ($null -ne $p.ParentId) {
                         $linesDisplayed++                        
 
@@ -290,7 +296,7 @@ function Show-ProcessExt {
 $processCompleter = {
     param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
 
-    Get-Process "$wordToComplete*" | Sort-Object -Property Name | ForEach-Object -Process { if ($_.Name.ToUpper().StartsWith($wordToComplete.ToUpper())) { "'$($_.Name)'" } }
+    Get-ProcessExtWmi "$wordToComplete*" | Sort-Object -Property Name | ForEach-Object -Process { if ($_.Name.ToUpper().StartsWith($wordToComplete.ToUpper())) { "'$($_.Name)'" } }
 }
 
 Register-ArgumentCompleter -CommandName Get-ProcessExt -ParameterName Name -ScriptBlock $processCompleter
