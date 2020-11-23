@@ -142,11 +142,11 @@ function Show-ProcessExt {
     param (
         [string]$Name = "",
         [float]$MinCpu = 0.0,
-        [SortProperty]$SortProperty = [SortProperty]::None,
-        [SortDirection]$SortDirection = [SortDirection]::Ascending,
+        [SortProperty]$SortProperty = [SortProperty]::CPU,
+        [SortDirection]$SortDirection = [SortDirection]::Descending,
         [switch]$HideHeader,
         [switch]$Continuous,
-        [int]$Delay = 5
+        [int]$Delay = 2
     )
 
 
