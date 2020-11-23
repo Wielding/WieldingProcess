@@ -74,17 +74,66 @@ function Get-ProcessExt {
     $pi
 }    
 
+function Get-ProcessExtWmi {
+    param (
+        [string]$Name = "*"
+    )
+
+    $CpuCores = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
+    $pi = @()
+    $cpu = @{}
+    $desc = @{}
+
+    (get-CimInstance win32_PerfFormattedData_PerfProc_Process ) | ForEach-Object -Process {
+        $cpu[$_.CimInstanceProperties["IDProcess"].Value] = [Decimal]::Round(($_.CimInstanceProperties["PercentProcessorTime"].Value / $CpuCores), 2)
+    }
+
+    Get-Process | ForEach-Object -Process {
+        $desc[$_.Id] = $_.Description
+    }
+
+    $gp = Get-CimInstance Win32_Process
+
+    foreach ($p in $gp) {
+
+        if (-not ($p.Caption -match $Name)) {
+            continue
+        }
+        
+        $add = $true
+
+        if (-not $cpu.ContainsKey($p.ProcessId)) {
+            $cpu[$p.ProcessId] = -1
+        }
+        if ($add) {
+            $i = New-Object -TypeName ProcessInfo
+            $i.Id = $p.ProcessId
+            $i.Name = $p.Caption
+            $i.CPU = $cpu[$p.ProcessId]
+            $i.PM = $p.PrivateMemorySize64
+            $i.WS = $p.WS
+            $i.ParentId = $p.ParentProcessId
+            $i.Threads = $p.ThreadCount
+            $i.Description = $desc[[int]$p.ProcessId]
+
+            $pi += $i
+        }
+    }
+
+    $pi
+}    
+
 function Get-KeyCommand {
-   param (
-       [object]$KeyMap,
-       [System.ConsoleKeyInfo]$key
-   ) 
+    param (
+        [object]$KeyMap,
+        [System.ConsoleKeyInfo]$key
+    ) 
 
-   if ($KeyMappings.ContainsKey($key.Modifiers)) {
-       return $KeyMappings[$key.Modifiers][$key.Key]
-   }
+    if ($KeyMappings.ContainsKey($key.Modifiers)) {
+        return $KeyMappings[$key.Modifiers][$key.Key]
+    }
 
-   return $KeyMappings["None"][$key.Key]
+    return $KeyMappings["None"][$key.Key]
 }
 
 function Show-ProcessExt {
@@ -94,23 +143,24 @@ function Show-ProcessExt {
         [SortProperty]$SortProperty = [SortProperty]::None,
         [SortDirection]$SortDirection = [SortDirection]::Ascending,
         [switch]$HideHeader,
-        [switch]$Continuous
+        [switch]$Continuous,
+        [int]$Delay = 5
     )
 
 
     $KeyMappings = @{
-        "None" = @{
-            [ConsoleKey]::Q = [KeyCommand]::Quit
+        "None"                                                                                                   = @{
+            [ConsoleKey]::Q   = [KeyCommand]::Quit
             [ConsoleKey]::F10 = [KeyCommand]::Quit
         }
-        [System.ConsoleModifiers]::Control = @{
+        [System.ConsoleModifiers]::Control                                                                       = @{
             [ConsoleKey]::C = [KeyCommand]::Quit
             [ConsoleKey]::P = [KeyCommand]::SortCpu
             [ConsoleKey]::N = [KeyCommand]::SortName
             [ConsoleKey]::D = [KeyCommand]::ToggleDirection
         }
 
-        ([System.ConsoleModifiers]::Shift + [System.ConsoleModifiers]::Alt + [System.ConsoleModifiers]::Control)  = @{
+        ([System.ConsoleModifiers]::Shift + [System.ConsoleModifiers]::Alt + [System.ConsoleModifiers]::Control) = @{
             [ConsoleKey]::X = [KeyCommand]::Quit
         }
     }
@@ -136,7 +186,7 @@ function Show-ProcessExt {
         }
 
         $keepShowing = $Continuous -and $keepShowing
-        $ps = Get-ProcessExt -Name $Name
+        $ps = Get-ProcessExtWmi -Name $Name
     
         if ($SortProperty -ne [SortProperty]::None) {
             if ($SortDirection -eq [SortDirection]::Descending) {
@@ -166,7 +216,7 @@ function Show-ProcessExt {
         foreach ($p in $ps) {
             if ($p.Id -ne 0) {
                 if ($p.CPU -ge $MinCpu) {
-                    if ($null -eq $p.ParentId) {
+                    if ($null -ne $p.ParentId) {
                         $linesDisplayed++                        
 
                         if ($linesDisplayed -ge $maxProcesses) {
@@ -194,40 +244,44 @@ function Show-ProcessExt {
 
             $moveToLastLine = "`e[$($host.Ui.RawUI.WindowSize.Height);0H"
             Write-Wansi "$moveToLastLine{:F15:}{:B6:}'Q', 'F10' or 'Ctrl-C' to quit [$SortProperty`:$SortDirection]{:EraseLine:} {:R:}"
-        }
 
-        if ([Console]::KeyAvailable) { 
-            # $keyHit = [Console]::ReadKey("AllowCtrlC,IncludeKeyUp,NoEcho")
-            $keyHit = [Console]::ReadKey("AllowCtrlC,IncludeKeyUp,NoEcho")
 
-            $kc = Get-KeyCommand $KeyMappings $keyHit
+            if ([Console]::KeyAvailable) { 
+                # $keyHit = [Console]::ReadKey("AllowCtrlC,IncludeKeyUp,NoEcho")
+                $keyHit = [Console]::ReadKey("AllowCtrlC,IncludeKeyUp,NoEcho")
 
-            switch ($kc) {
-                ([KeyCommand]::Quit) {
-                    Write-Wansi "{:DisableAlt:}{:ShowCursor:}"
-                    return                                        
-                }
+                $kc = Get-KeyCommand $KeyMappings $keyHit
 
-                ([KeyCommand]::ToggleDirection) {
-                    if ($SortDirection -eq [SortDirection]::Ascending) {
-                        $SortDirection = [SortDirection]::Descending
-                    } else {
-                        $SortDirection = [SortDirection]::Ascending
+                switch ($kc) {
+                    ([KeyCommand]::Quit) {
+                        Write-Wansi "{:DisableAlt:}{:ShowCursor:}"
+                        return                                        
+                    }
+
+                    ([KeyCommand]::ToggleDirection) {
+                        if ($SortDirection -eq [SortDirection]::Ascending) {
+                            $SortDirection = [SortDirection]::Descending
+                        }
+                        else {
+                            $SortDirection = [SortDirection]::Ascending
+                        }
+                    }
+
+                    ([KeyCommand]::SortName) {
+                        $SortProperty = [SortProperty]::Name
+                    }
+
+                    ([KeyCommand]::SortCpu) {
+                        $SortProperty = [SortProperty]::CPU
+                    }
+
+                    ([KeyCommand]::ToggleColor) {
+                        $Wansi.Enabled = (-not $Wansi.Enabled )
                     }
                 }
-
-                ([KeyCommand]::SortName) {
-                    $SortProperty = [SortProperty]::Name
-                }
-
-                ([KeyCommand]::SortCpu) {
-                    $SortProperty = [SortProperty]::CPU
-                }
-
-                ([KeyCommand]::ToggleColor) {
-                    $Wansi.Enabled = (-not $Wansi.Enabled )
-                }
             }
+
+            Start-Sleep -Seconds $Delay
         }
     }
 }
@@ -243,4 +297,5 @@ Register-ArgumentCompleter -CommandName Get-ProcessExt -ParameterName Name -Scri
 Register-ArgumentCompleter -CommandName Show-ProcessExt -ParameterName Name -ScriptBlock $processCompleter
 
 Export-ModuleMember -Function Out-Default, 'Get-ProcessExt'
+Export-ModuleMember -Function Out-Default, 'Get-ProcessExtWmi'
 Export-ModuleMember -Function Out-Default, 'Show-ProcessExt'
