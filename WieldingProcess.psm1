@@ -85,7 +85,7 @@ function Get-ProcessExtWmi {
     $desc = @{}
 
     (get-CimInstance win32_PerfFormattedData_PerfProc_Process ) | ForEach-Object -Process {
-        $cpu[$_.CimInstanceProperties["IDProcess"].Value] = [Decimal]::Round(($_.CimInstanceProperties["PercentProcessorTime"].Value / $CpuCores), 2)
+        $cpu[$_.IDProcess] = [Decimal]::Round(($_.PercentProcessorTime / $CpuCores), 2)
     }
 
     Get-Process | ForEach-Object -Process {
@@ -141,7 +141,7 @@ function Get-KeyCommand {
 function Show-ProcessExt {
     param (
         [string]$Name = "",
-        [float]$MinCpu = 0.0,
+        [float]$MinCpu = 0.001,
         [SortProperty]$SortProperty = [SortProperty]::CPU,
         [SortDirection]$SortDirection = [SortDirection]::Descending,
         [switch]$HideHeader,
@@ -250,8 +250,18 @@ function Show-ProcessExt {
                 $linesToClear--
             }            
 
+            $load = (Get-CimInstance Win32_Processor | Select-Object -Property LoadPercentage).LoadPercentage
+            $loadColor = "{:F22:}"
+
+            if ($load -gt 5) {
+                $loadColor = "{:F3:}"
+            }
+
+            if ($load -gt 10) {
+                $loadColor = "{:F1:}"
+            }
             $moveToLastLine = "`e[$($host.Ui.RawUI.WindowSize.Height);0H"
-            Write-Wansi "$moveToLastLine{:F15:}{:B6:}'Q', 'F10' or 'Ctrl-C' to quit [$SortProperty`:$SortDirection]{:EraseLine:} {:R:}"
+            Write-Wansi "$moveToLastLine{:F15:}{:B6:}'Q', 'F10' or 'Ctrl-C' to quit Sort:[$SortProperty`:$SortDirection]  Load:[$loadColor$load{:F15:}]{:EraseLine:} {:R:}"
 
 
             if ([Console]::KeyAvailable) { 
