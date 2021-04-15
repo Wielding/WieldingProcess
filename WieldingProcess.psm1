@@ -4,6 +4,7 @@ enum SortProperty {
     None
     CPU
     Name
+    WS
 }
 
 enum SortDirection {
@@ -15,6 +16,7 @@ enum KeyCommand {
     Quit
     SortCpu
     SortName
+    SortMemory
     ToggleDirection
     ToggleColor
 }
@@ -156,10 +158,12 @@ function Show-ProcessExt {
             [ConsoleKey]::F10 = [KeyCommand]::Quit
         }
         [System.ConsoleModifiers]::Control                                                                       = @{
-            [ConsoleKey]::C = [KeyCommand]::Quit
+            # [ConsoleKey]::C = [KeyCommand]::Quit
             [ConsoleKey]::P = [KeyCommand]::SortCpu
             [ConsoleKey]::N = [KeyCommand]::SortName
+            [ConsoleKey]::W = [KeyCommand]::SortMemory
             [ConsoleKey]::D = [KeyCommand]::ToggleDirection
+            
         }
 
         ([System.ConsoleModifiers]::Shift + [System.ConsoleModifiers]::Alt + [System.ConsoleModifiers]::Control) = @{
@@ -203,12 +207,14 @@ function Show-ProcessExt {
 
         if (-not $HideHeader) {
             $linesDisplayed++
-            Write-Wansi ("{0}{1}{2} {3}{4}{5}`n" -f
-                (ConvertTo-AnsiString "{:F15:}{:B6:}Id" -PadRight 10).Value,
-                (ConvertTo-AnsiString "ParentId" -PadLeft 10).Value,
+            Write-Wansi ("{0}{1}{2} {3}{4}{5}{6}`n" -f
+                (ConvertTo-AnsiString "{:F15:}{:B6:}Id" -PadRight 8).Value,
+                (ConvertTo-AnsiString "ParentId" -PadRight 8).Value,
                 (ConvertTo-AnsiString "CPU%" -PadLeft 8).Value,
-                (ConvertTo-AnsiString "Name" -PadRight 30).Value,
-                (ConvertTo-AnsiString "Description{:EraseLine:}" -PadRight 40).Value,
+                (ConvertTo-AnsiString "WS" -PadLeft 8).Value,
+                (ConvertTo-AnsiString "Thd" -PadLeft 5).Value,
+                (ConvertTo-AnsiString " Name" -PadRight 30).Value,
+                (ConvertTo-AnsiString " Description{:EraseLine:}" -PadRight 30).Value,
                 (ConvertTo-AnsiString "{:R:}").Value
 
             )        
@@ -230,12 +236,14 @@ function Show-ProcessExt {
                             break
                         }
 
-                        Write-Wansi ("{0}{1}{2} {3}{4}`n" -f
-                            (ConvertTo-AnsiString "{:F15:}$($p.Id){:R:}" -PadRight 10).Value,
-                            (ConvertTo-AnsiString "{:F15:}$($p.ParentId){:R:}" -PadLeft 10).Value,
+                        Write-Wansi ("{0}{1}{2} {3}{4}{5}{6}`n" -f
+                            (ConvertTo-AnsiString "{:R:}{:F15:}$($p.Id){:R:}" -PadRight 8).Value,
+                            (ConvertTo-AnsiString "{:F15:}$($p.ParentId){:R:}" -PadRight 8).Value,
                             (ConvertTo-AnsiString "{:F10:}$($p.CPU){:R:}" -PadLeft 8).Value,
-                            (ConvertTo-AnsiString "{:F3:}$($p.Name){:R:}" -PadRight 30).Value,
-                            (ConvertTo-AnsiString "{:F8:}$($p.Description){:R:}{:EraseLine:}" -PadRight 40).Value.SubString(0, 40)
+                            (ConvertTo-AnsiString "{:F166:}$([int64]($p.WS / 1024)){:R:}" -PadLeft 8).Value,
+                            (ConvertTo-AnsiString "{:F32:}$([int64]($p.Threads)){:R:}" -PadLeft 5).Value,
+                            (ConvertTo-AnsiString "{:F3:} $($p.Name){:R:}" -PadRight 30).Value,
+                            (ConvertTo-AnsiString "{:F8:} $($p.Description){:R:}{:EraseLine:}" -PadRight 40).Value.SubString(0, 40)
                         )
                     }
                 }
@@ -253,20 +261,20 @@ function Show-ProcessExt {
             $load = (Get-CimInstance Win32_Processor | Select-Object -Property LoadPercentage).LoadPercentage
             $loadColor = "{:F22:}"
 
-            if ($load -gt 5) {
+            if ($load -gt 25) {
                 $loadColor = "{:F3:}"
             }
 
-            if ($load -gt 10) {
+            if ($load -gt 50) {
                 $loadColor = "{:F1:}"
             }
+
             $moveToLastLine = "`e[$($host.Ui.RawUI.WindowSize.Height);0H"
-            Write-Wansi "$moveToLastLine{:F15:}{:B6:}'Q', 'F10' or 'Ctrl-C' to quit Sort:[$SortProperty`:$SortDirection]  Load:[$loadColor$load{:F15:}]{:EraseLine:} {:R:}"
+            Write-Wansi "$moveToLastLine{:F15:}{:B6:}'{:F3:}Q{:F15:}' or '{:F3:}F10{:F15:}' to quit | Sort:[$SortProperty`:$SortDirection] | Load:[$loadColor$load{:F15:}]{:EraseLine:} {:R:}"
 
 
             if ([Console]::KeyAvailable) { 
-                # $keyHit = [Console]::ReadKey("AllowCtrlC,IncludeKeyUp,NoEcho")
-                $keyHit = [Console]::ReadKey("AllowCtrlC,IncludeKeyUp,NoEcho")
+                $keyHit = [Console]::ReadKey("IncludeKeyUp,NoEcho")
 
                 $kc = Get-KeyCommand $KeyMappings $keyHit
 
@@ -293,13 +301,19 @@ function Show-ProcessExt {
                         $SortProperty = [SortProperty]::CPU
                     }
 
+                    ([KeyCommand]::SortMemory) {
+                        $SortProperty = [SortProperty]::WS
+                    }
+
                     ([KeyCommand]::ToggleColor) {
                         $Wansi.Enabled = (-not $Wansi.Enabled )
                     }
                 }
             }
 
-            Start-Sleep -Seconds $Delay
+            if ($Delay -gt 0) {
+                Start-Sleep -Seconds $Delay
+            }
         }
     }
 }
