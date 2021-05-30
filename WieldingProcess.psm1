@@ -44,37 +44,35 @@ function Get-ProcessExt {
         [string]$Name = "*"
     )
 
-    $CpuCores = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
+    $processorCount = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
     $processInfo = @()
-    $cpu = @{}
-    $cp = @{}
-    $cl = @{}
+    $cpuPercentages = @{}
+    $cimProcessList = @{}
+    $processList = @{}
 
     (get-CimInstance win32_PerfFormattedData_PerfProc_Process ) | ForEach-Object -Process {
-        $cpu[[int]($_.IDProcess)] = [Decimal]::Round(($_.PercentProcessorTime / $CpuCores), 2)
-    }
-   
-    $processList = Get-Process -Name $Name -ErrorAction SilentlyContinue
+        $cpuPercentages[[int]($_.IDProcess)] = [Decimal]::Round(($_.PercentProcessorTime / $processorCount), 2)
+    }      
 
-    $processList | ForEach-Object -Process {
-        $cl[$_.Id] = $_
+    Get-Process -Name $Name -ErrorAction SilentlyContinue | ForEach-Object -Process {
+        $processList[$_.Id] = $_
     } 
 
     Get-CimInstance Win32_Process | ForEach-Object -Process {
-        $cp[[int]($_.ProcessId)] = $_
+        $cimProcessList[[int]($_.ProcessId)] = $_
     }
 
-    foreach ($p in $cl.GetEnumerator()) {
+    foreach ($p in $processList.GetEnumerator()) {
 
         $i = New-Object -TypeName ProcessInfo
-        $process = $cl[$p.Name]
+        $process = $processList[$p.Name]
         $i.Id = $process.Id
         $i.Name = $process.Name
-        $i.CPU = $cpu[$process.Id]
+        $i.CPU = $cpuPercentages[$process.Id]
         $i.PM = $process.PrivateMemorySize64
         $i.WS = $process.WS
-        $i.ParentId = $cp[$process.Id].ParentProcessId
-        $i.Threads = $process.ThreadCount
+        $i.ParentId = $cimProcessList[$process.Id].ParentProcessId
+        $i.Threads = $cimProcessList[$process.Id].ThreadCount
         $i.Description = $process.Description
 
         $processInfo += $i
@@ -104,7 +102,7 @@ function Show-ProcessExt {
         [SortDirection]$SortDirection = [SortDirection]::Descending,
         [switch]$HideHeader,
         [switch]$Continuous,
-        [int]$Delay = 2
+        [int]$Delay = 0
     )
 
 
