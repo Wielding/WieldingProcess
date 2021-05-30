@@ -6,21 +6,16 @@ This is an example Powershell module using [WieldingAnsi](https://github.com/Wie
 
 This project is currently my playground for what is possible using [WieldingAnsi](https://github.com/Wielding/WieldingAnsi) and helps determine what functionality I will add to that project.
 
-My intention is not to fully implement anything process related so don't expect an `htop` replacement here.  My goal is to implement text base UI features in a Powershell console script. I am just using `htop` as a reference here.  Maybe one day it will be a full featured process monitor but I doubt it since I can't really get all of the process information with Powershell alone.  I will probably move onto something else before it ever gets that far.  
+My intention is not to fully implement anything process related so don't expect an `htop` replacement here.  My goal is to implement text base UI features in a Powershell console script. I am just using `htop` as a reference here.
 
-This module is known to work using [Windows Terminal](https://github.com/microsoft/terminal).  Any other console running Powershell may have unexpected behavior or not work at all.  For example the ASNI escape codes for hiding/showing the cursor do not work under the default Powershell Core console but work fine under [Windows Terminal](https://github.com/microsoft/terminal).  
+The CPU usage resolution is very poor due to limitations in PowerShell only code related to process information. I have looked for alternative methods to get CPU percentage per process wiht PowerSHell and have not found any yet.
 
-It implements some handy ANSI escape sequences such as:
+This module has only been tested with [Powershell Core 7.0+](https://github.com/powershell/powershell) and [Windows Terminal](https://github.com/microsoft/terminal).  Any other console running any other Powershell may have unexpected behavior or not work at all.
 
-1. Switching to a secondary screen buffer to display the processes and then switching back to the original buffer when `Ctrl-C` is press which restores your console screen contents.
-2. Moving the cursor to the top corner of the screen to update the screen.
-3. Erasing lines to clear old output.
-4. Hiding the cursor upon execution and then restoring when upon exit.
 
 It has process name autocompletion enabled for the first parameter.
 
-
-I have also implemented some basic keyboard shortcuts.
+Thare are some keyboard shortcuts.
 
 * `Q`, `F10` - Quit
 * `CTRL-P` - Sort by CPU percent
@@ -34,11 +29,10 @@ To give it a try
 ```powershell
 git clone https://github.com/Wielding/WieldingProcess
 cd WieldingProcess
-Install-Module WieldingAnsi # this is a required dependency
+Install-Module WieldingAnsi # this is a required dependency from the PowerShell Gallery
 Import-Module WieldingAnsi
 Import-Module ./WieldingProcess.psm1
-Show-ProcessExt -Continuous -SortProperty CPU -MinCpu 0.01 -SortDirection Descending
+Show-ProcessExt -Continuous -MinCpu 0.01
 ```
 
-This will display an `htop` like continuously updating screen with as many processes as can fit within your current console height and have at least 0.01% CPU usage.
-
+This will display a continuously updating screen with as many processes that register CPU usage as can fit within your current console height until the `Q` or `F10` key is hit.
