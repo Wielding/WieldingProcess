@@ -1,5 +1,7 @@
 # WieldingProcess
 
+**Do not rely on functionality in this project. I will break it eventually.**
+
 This is an example Powershell module using [WieldingAnsi](https://github.com/Wielding/WieldingAnsi) to create a very primitive `htop` like process viewer for Windows.
 
 This project is currently my playground for what is possible using [WieldingAnsi](https://github.com/Wielding/WieldingAnsi) and helps determine what functionality I will add to that project.
@@ -15,11 +17,16 @@ It implements some handy ANSI escape sequences such as:
 3. Erasing lines to clear old output.
 4. Hiding the cursor upon execution and then restoring when upon exit.
 
+It has process name autocompletion enabled for the first parameter.
+
+
 I have also implemented some basic keyboard shortcuts.
 
-* `Q`, `F10`, `CTRL-C` - Quit
+* `Q`, `F10` - Quit
 * `CTRL-P` - Sort by CPU percent
 * `CTRL-N` - Sort by Name
+* `CTRL-I` - Sort by Process ID
+* `CTRL-R` - Sort by Parent Process ID
 * `CTRL-D` - Toggle sort direction (Ascending,Descending)
 
 To give it a try 

@@ -3,6 +3,10 @@ Change Log
 
 ## **Latest**
 
+### 0.0.4 - 2021-5-30
+#### Changes
+- rewrote Get-ProcessExtWmi
+
 ### 0.0.3 - 2021-5-30
 #### Changes
 - added sort by Id and ParentId
