@@ -5,6 +5,8 @@ enum SortProperty {
     CPU
     Name
     WS
+    Id
+    ParentId
 }
 
 enum SortDirection {
@@ -17,6 +19,8 @@ enum KeyCommand {
     SortCpu
     SortName
     SortMemory
+    SortId
+    SortParentId
     ToggleDirection
     ToggleColor
 }
@@ -162,6 +166,8 @@ function Show-ProcessExt {
             [ConsoleKey]::P = [KeyCommand]::SortCpu
             [ConsoleKey]::N = [KeyCommand]::SortName
             [ConsoleKey]::W = [KeyCommand]::SortMemory
+            [ConsoleKey]::I = [KeyCommand]::SortId
+            [ConsoleKey]::R = [KeyCommand]::SortParentId
             [ConsoleKey]::D = [KeyCommand]::ToggleDirection
             
         }
@@ -303,6 +309,14 @@ function Show-ProcessExt {
 
                     ([KeyCommand]::SortMemory) {
                         $SortProperty = [SortProperty]::WS
+                    }
+
+                    ([KeyCommand]::SortParentId) {
+                        $SortProperty = [SortProperty]::ParentId
+                    }
+
+                    ([KeyCommand]::SortId) {
+                        $SortProperty = [SortProperty]::Id
                     }
 
                     ([KeyCommand]::ToggleColor) {
