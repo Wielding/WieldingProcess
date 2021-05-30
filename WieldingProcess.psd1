@@ -12,7 +12,7 @@
 RootModule = 'WieldingProcess.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.4'
+ModuleVersion = '0.0.5'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -107,7 +107,7 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        ReleaseNotes = 'rewrote Get-ProcessExtWmi'
+        ReleaseNotes = 'removed accidental characters'
 
         # Prerelease string of this module
         # Prerelease = ''

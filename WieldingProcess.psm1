@@ -85,16 +85,15 @@ function Get-ProcessExt {
 
 function Get-KeyCommand {
     param (
-        [object]$KeyMap,
+        [object]$Map,
         [System.ConsoleKeyInfo]$key
     ) 
 
-    if ($KeyMapprocessInfongs.ContainsKey($key.Modifiers)) {
-        return $KeyMapprocessInfo
-ngs[$key.Modifiers][$key.Key]
+    if ($Map.ContainsKey($key.Modifiers)) {
+        return $Map[$key.Modifiers][$key.Key]
     }
 
-    return $KeyMapprocessInfongs["None"][$key.Key]
+    return $Map["None"][$key.Key]
 }
 
 function Show-ProcessExt {
@@ -109,7 +108,7 @@ function Show-ProcessExt {
     )
 
 
-    $KeyMapprocessInfongs = @{
+    $KeyMap = @{
         "None"                                                                                                   = @{
             [ConsoleKey]::Q   = [KeyCommand]::Quit
             [ConsoleKey]::F10 = [KeyCommand]::Quit
@@ -230,12 +229,10 @@ function Show-ProcessExt {
             $moveToLastLine = "`e[$($host.Ui.RawUI.WindowSize.Height);0H"
             Write-Wansi "$moveToLastLine{:F15:}{:B6:}'{:F3:}Q{:F15:}' or '{:F3:}F10{:F15:}' to quit | Sort:[$SortProperty`:$SortDirection] | Load:[$loadColor$load{:F15:}]{:EraseLine:} {:R:}"
 
-
             if ([Console]::KeyAvailable) { 
                 $keyHit = [Console]::ReadKey("IncludeKeyUp,NoEcho")
 
-                $kc = Get-KeyCommand $KeyMapprocessInfo
-        ngs $keyHit
+                $kc = Get-KeyCommand $KeyMap $keyHit
 
                 switch ($kc) {
                     ([KeyCommand]::Quit) {

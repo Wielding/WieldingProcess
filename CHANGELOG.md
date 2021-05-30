@@ -3,6 +3,10 @@ Change Log
 
 ## **Latest**
 
+### 0.0.5 - 2021-5-30
+#### Changes
+- removed accidental characters
+
 ### 0.0.4 - 2021-5-30
 #### Changes
 - rewrote Get-ProcessExtWmi
