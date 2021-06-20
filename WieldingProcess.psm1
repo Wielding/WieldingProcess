@@ -138,13 +138,13 @@ function Show-ProcessExt {
 
 
     if ($Continuous) {
-        Write-Wansi "{:EnableAlt:}{:EraseDisplay:}{:HideCursor:}"
+        Write-Host (ConvertTo-AnsiString  "{:EnableAlt:}{:EraseDisplay:}{:HideCursor:}").Value -NoNewline
     }
 
     $keepShowing = $true
     while ($keepShowing) {
         if ($Continuous) {
-            Write-Wansi "{:MoveHome:}"
+            Write-Host (ConvertTo-AnsiString "{:MoveHome:}").Value -NoNewline
         }
 
         $keepShowing = $Continuous -and $keepShowing
@@ -209,7 +209,7 @@ function Show-ProcessExt {
             $linesToClear = $host.Ui.RawUI.WindowSize.Height - $linesDisplayed - 2
 
             while ($linesToClear -gt 0) {
-                Write-Wansi "{:R:}{:EraseLine:}`n"                    
+                Write-Host (ConvertTo-AnsiString "{:R:}{:EraseLine:}`n").Value -NoNewline
                 $linesToClear--
             }            
 
@@ -225,7 +225,7 @@ function Show-ProcessExt {
             }
 
             $moveToLastLine = "`e[$($host.Ui.RawUI.WindowSize.Height);0H"
-            Write-Wansi "$moveToLastLine{:F15:}{:B6:}'{:F3:}Q{:F15:}' or '{:F3:}F10{:F15:}' to quit | Sort:[$SortProperty`:$SortDirection] | Load:[$loadColor$load{:F15:}]{:EraseLine:} {:R:}"
+            Write-Host (ConvertTo-AnsiString "$moveToLastLine{:F15:}{:B6:}'{:F3:}Q{:F15:}' or '{:F3:}F10{:F15:}' to quit | Sort:[$SortProperty`:$SortDirection] | Load:[$loadColor$load{:F15:}]{:EraseLine:} {:R:}").Value -NoNewline
 
             if ([Console]::KeyAvailable) { 
                 $keyHit = [Console]::ReadKey("IncludeKeyUp,NoEcho")
@@ -234,7 +234,7 @@ function Show-ProcessExt {
 
                 switch ($kc) {
                     ([KeyCommand]::Quit) {
-                        Write-Wansi "{:DisableAlt:}{:ShowCursor:}"
+                        Write-Host (ConvertTo-AnsiString  "{:DisableAlt:}{:ShowCursor:}").Value -NoNewline
                         return                                        
                     }
 
@@ -279,7 +279,6 @@ function Show-ProcessExt {
         }
     }
 }
-
 
 $processCompleter = {
     param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
